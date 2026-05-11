@@ -4,6 +4,27 @@ A Django-only blog MVP inspired by velog. Django Templates handle the front end 
 
 ## Run
 
+### Docker Compose with PostgreSQL
+
+```powershell
+docker compose up -d --build
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000/
+```
+
+The compose setup runs two services:
+
+- `db`: PostgreSQL with a named Docker volume
+- `app`: Django app container built from `Dockerfile`
+
+The app waits for PostgreSQL, runs migrations, collects static files, and starts Django on port `8000`.
+
+### Local Python with SQLite
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -r requirements.txt
@@ -27,4 +48,4 @@ python -m venv .venv
 
 ## Local-only storage
 
-This project is intended for localhost testing. Application state is stored in files inside this folder, primarily `db.sqlite3`. The editor preview uses JavaScript for interaction, but draft persistence is handled by Django and SQLite rather than browser `localStorage`.
+This project is intended for localhost testing. With local Python, application state is stored in this folder through `db.sqlite3`. With Docker Compose, application state is stored in the local Docker PostgreSQL volume declared in `docker-compose.yaml`. The editor preview uses JavaScript for interaction, but draft persistence is handled by Django and the configured database rather than browser `localStorage`.
