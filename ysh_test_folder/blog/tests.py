@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Comment, Post, PostLike, Tag
+from .models import Comment, Post, PostLike, Series, Tag
 from .utils import render_markdown
 
 
@@ -65,6 +65,7 @@ class PostViewTests(TestCase):
                 "title": "New Post",
                 "content": "Content",
                 "excerpt": "Summary",
+                "series_title": "Django Notes",
                 "tags_text": "django, clone",
                 "is_public": "on",
             },
@@ -73,6 +74,17 @@ class PostViewTests(TestCase):
         post = Post.objects.get(title="New Post")
         self.assertRedirects(response, post.get_absolute_url())
         self.assertEqual(list(post.tags.values_list("name", flat=True)), ["clone", "django"])
+        self.assertEqual(post.series.title, "Django Notes")
+
+    def test_series_page_lists_matching_posts(self):
+        series = Series.objects.create(author=self.author, title="Learning Django")
+        self.post.series = series
+        self.post.save(update_fields=["series"])
+
+        response = self.client.get(reverse("series_posts", args=[series.slug]))
+
+        self.assertContains(response, "Learning Django")
+        self.assertContains(response, "First Post")
 
     def test_only_author_can_update_or_delete(self):
         self.client.login(username="other", password="StrongPass123!")

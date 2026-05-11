@@ -9,10 +9,15 @@ class PostForm(forms.ModelForm):
         required=False,
         help_text="Separate up to 8 tags with commas.",
     )
+    series_title = forms.CharField(
+        label="Series",
+        required=False,
+        help_text="Optional series title to group related posts.",
+    )
 
     class Meta:
         model = Post
-        fields = ("title", "content", "excerpt", "tags_text", "is_public")
+        fields = ("title", "content", "excerpt", "series_title", "tags_text", "is_public")
         labels = {
             "title": "Title",
             "content": "Content",
@@ -36,6 +41,8 @@ class PostForm(forms.ModelForm):
             self.fields["tags_text"].initial = ", ".join(
                 self.instance.tags.values_list("name", flat=True)
             )
+            if self.instance.series:
+                self.fields["series_title"].initial = self.instance.series.title
 
     def clean_tags_text(self):
         raw = self.cleaned_data["tags_text"]
@@ -59,6 +66,18 @@ class PostForm(forms.ModelForm):
             tag, _ = Tag.objects.get_or_create(name=name)
             tags.append(tag)
         post.tags.set(tags)
+
+    def save_series(self, post):
+        title = self.cleaned_data["series_title"].strip()
+        if not title:
+            post.series = None
+            post.save(update_fields=["series"])
+            return
+
+        series, _ = post.author.series.get_or_create(title=title)
+        if post.series_id != series.pk:
+            post.series = series
+            post.save(update_fields=["series"])
 
 
 class CommentForm(forms.ModelForm):

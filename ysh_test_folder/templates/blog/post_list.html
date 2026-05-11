@@ -26,6 +26,13 @@
     </div>
   {% endif %}
 
+  {% if series %}
+    <div class="result-banner">
+      <strong>Series</strong>
+      <span>{{ series.title }} by {{ series.author.username }}</span>
+    </div>
+  {% endif %}
+
   {% if tags and active_tag %}
     <div class="tag-cloud">
       {% for tag in tags %}

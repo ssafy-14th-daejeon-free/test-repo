@@ -10,6 +10,9 @@
             <h2>{{ post.title }}</h2>
             <p>{{ post.summary }}</p>
           </a>
+          {% if post.series %}
+            <a class="series-link" href="{{ post.series.get_absolute_url }}">Series: {{ post.series.title }}</a>
+          {% endif %}
           {% if post.tags.all %}
             <div class="tag-row">
               {% for tag in post.tags.all %}

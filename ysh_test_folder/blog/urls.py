@@ -11,5 +11,6 @@ urlpatterns = [
     path("posts/<str:slug>/like/", views.toggle_like, name="post_like"),
     path("posts/<str:slug>/comments/", views.comment_create, name="comment_create"),
     path("comments/<int:pk>/delete/", views.comment_delete, name="comment_delete"),
+    path("series/<str:slug>/", views.series_posts, name="series_posts"),
     path("tags/<str:slug>/", views.tag_posts, name="tag_posts"),
 ]

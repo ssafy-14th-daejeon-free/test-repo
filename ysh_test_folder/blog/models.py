@@ -39,6 +39,33 @@ class Tag(models.Model):
         return reverse("tag_posts", kwargs={"slug": self.slug})
 
 
+class Series(models.Model):
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="series",
+    )
+    title = models.CharField(max_length=80)
+    slug = models.SlugField(max_length=90, unique=True, allow_unicode=True, blank=True)
+    description = models.CharField(max_length=240, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["title"]
+        verbose_name_plural = "series"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = build_unique_slug(Series, self.title, self.pk)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse("series_posts", kwargs={"slug": self.slug})
+
+
 class Post(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -49,6 +76,13 @@ class Post(models.Model):
     slug = models.SlugField(max_length=90, unique=True, allow_unicode=True, blank=True)
     content = models.TextField()
     excerpt = models.CharField(max_length=240, blank=True)
+    series = models.ForeignKey(
+        Series,
+        on_delete=models.SET_NULL,
+        related_name="posts",
+        blank=True,
+        null=True,
+    )
     tags = models.ManyToManyField(Tag, related_name="posts", blank=True)
     liked_by = models.ManyToManyField(
         settings.AUTH_USER_MODEL,

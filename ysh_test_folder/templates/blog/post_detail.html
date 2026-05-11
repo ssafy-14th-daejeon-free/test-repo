@@ -20,6 +20,9 @@
         {% endfor %}
       </div>
     {% endif %}
+    {% if post.series %}
+      <a class="detail-series" href="{{ post.series.get_absolute_url }}">Series: {{ post.series.title }}</a>
+    {% endif %}
   </header>
 
   <div class="markdown-body">

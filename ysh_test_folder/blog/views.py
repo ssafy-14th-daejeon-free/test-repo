@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .forms import CommentForm, PostForm
-from .models import Comment, Post, PostLike, Tag
+from .models import Comment, Post, PostLike, Series, Tag
 
 
 FEED_TABS = [
@@ -22,7 +22,7 @@ FEED_TABS = [
 def public_posts():
     return (
         Post.objects.filter(is_public=True)
-        .select_related("author")
+        .select_related("author", "series")
         .prefetch_related("tags", "likes")
         .annotate(likes_count=Count("likes"))
     )
@@ -53,6 +53,7 @@ def post_list(request):
             Q(title__icontains=search_query)
             | Q(content__icontains=search_query)
             | Q(tags__name__icontains=search_query)
+            | Q(series__title__icontains=search_query)
         ).distinct()
 
     return render(
@@ -86,9 +87,28 @@ def tag_posts(request, slug):
     )
 
 
+def series_posts(request, slug):
+    series = get_object_or_404(Series.objects.select_related("author"), slug=slug)
+    posts = ordered_posts(public_posts().filter(series=series), "latest")
+    return render(
+        request,
+        "blog/post_list.html",
+        {
+            "page_title": series.title,
+            "page_obj": paginate(request, posts),
+            "tabs": FEED_TABS,
+            "active_tab": "latest",
+            "series": series,
+            "tags": Tag.objects.all()[:20],
+        },
+    )
+
+
 def post_detail(request, slug):
     post = get_object_or_404(
-        Post.objects.select_related("author").prefetch_related("tags", "likes"),
+        Post.objects.select_related("author", "series").prefetch_related(
+            "tags", "likes", "comments"
+        ),
         slug=slug,
     )
     if not post.is_public and post.author != request.user:
@@ -120,6 +140,7 @@ def post_create(request):
             post.author = request.user
             post.save()
             form.save_tags(post)
+            form.save_series(post)
             messages.success(request, "Post published.")
             return redirect(post)
     else:
@@ -143,6 +164,7 @@ def post_update(request, slug):
         if form.is_valid():
             post = form.save()
             form.save_tags(post)
+            form.save_series(post)
             messages.success(request, "Post updated.")
             return redirect(post)
     else:
