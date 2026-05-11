@@ -1,0 +1,42 @@
+{% load static %}
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Django Blog{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" href="{% url 'post_list' %}">Django Blog</a>
+      <div class="nav-actions">
+        {% if user.is_authenticated %}
+          <a href="{% url 'post_create' %}">새 글</a>
+          <a href="{% url 'profile' user.username %}">{{ user.username }}</a>
+          <form action="{% url 'logout' %}" method="post" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="link-button">로그아웃</button>
+          </form>
+        {% else %}
+          <a href="{% url 'login' %}">로그인</a>
+          <a class="button button-primary" href="{% url 'signup' %}">회원가입</a>
+        {% endif %}
+      </div>
+    </nav>
+  </header>
+
+  <main class="container">
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <p class="message {{ message.tags }}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

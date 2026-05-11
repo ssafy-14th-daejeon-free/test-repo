@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}{{ owner.username }} · Django Blog{% endblock %}
+
+{% block content %}
+<section class="profile-header">
+  <h1>{{ profile }}</h1>
+  <p class="muted">@{{ owner.username }}</p>
+  {% if profile.bio %}
+    <p>{{ profile.bio }}</p>
+  {% endif %}
+</section>
+
+<section class="section-header">
+  <h2>작성한 글</h2>
+</section>
+
+{% include "blog/_post_cards.html" %}
+{% endblock %}

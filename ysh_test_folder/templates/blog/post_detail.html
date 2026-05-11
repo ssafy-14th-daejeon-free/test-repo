@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} · Django Blog{% endblock %}
+
+{% block content %}
+<article class="post-detail">
+  <header class="post-detail-header">
+    <h1>{{ post.title }}</h1>
+    <div class="post-meta">
+      <a href="{% url 'profile' post.author.username %}">@{{ post.author.username }}</a>
+      <span>{{ post.created_at|date:"Y.m.d H:i" }}</span>
+      {% if not post.is_public %}
+        <span>비공개</span>
+      {% endif %}
+    </div>
+    {% if post.tags.all %}
+      <div class="tag-row">
+        {% for tag in post.tags.all %}
+          <a class="tag" href="{{ tag.get_absolute_url }}">#{{ tag.name }}</a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </header>
+
+  <div class="markdown-body">
+    {{ post.rendered_content|safe }}
+  </div>
+
+  <footer class="post-actions">
+    {% if user.is_authenticated %}
+      <form method="post" action="{% url 'post_like' post.slug %}">
+        {% csrf_token %}
+        <button class="button {% if liked %}button-secondary{% else %}button-primary{% endif %}" type="submit">
+          {% if liked %}좋아요 취소{% else %}좋아요{% endif %} {{ post.like_count }}
+        </button>
+      </form>
+    {% else %}
+      <a class="button button-primary" href="{% url 'login' %}">로그인하고 좋아요</a>
+    {% endif %}
+
+    {% if can_edit %}
+      <a class="button" href="{% url 'post_update' post.slug %}">수정</a>
+      <a class="button button-danger" href="{% url 'post_delete' post.slug %}">삭제</a>
+    {% endif %}
+  </footer>
+</article>
+{% endblock %}
