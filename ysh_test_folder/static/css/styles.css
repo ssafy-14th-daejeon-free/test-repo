@@ -481,6 +481,67 @@ button {
   margin: 36px auto 0;
 }
 
+.comments-panel {
+  max-width: 768px;
+  margin: 52px auto 0;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+
+.comments-panel h2 {
+  margin-bottom: 18px;
+  font-size: 24px;
+}
+
+.comment-form {
+  margin-bottom: 32px;
+}
+
+.comment-form textarea {
+  width: 100%;
+  min-height: 104px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  resize: vertical;
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.comment-item {
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+.comment-item header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.comment-item p {
+  margin: 12px 0 0;
+}
+
+.text-button {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .post-detail h1 {
   font-size: 44px;
 }
@@ -587,6 +648,10 @@ button {
   background: var(--surface);
   color: var(--muted);
   text-align: center;
+}
+
+.empty.compact {
+  padding: 20px;
 }
 
 .pagination {

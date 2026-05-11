@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Post, PostLike, Tag
+from .models import Comment, Post, PostLike, Tag
 from .utils import render_markdown
 
 
@@ -110,3 +110,32 @@ class PostViewTests(TestCase):
 
         self.assertContains(response, "#django")
         self.assertContains(response, "First Post")
+
+    def test_logged_in_user_can_comment(self):
+        self.client.login(username="other", password="StrongPass123!")
+
+        response = self.client.post(
+            reverse("comment_create", args=[self.post.slug]),
+            {"content": "Great post."},
+        )
+
+        self.assertRedirects(response, self.post.get_absolute_url())
+        self.assertEqual(Comment.objects.get(post=self.post).content, "Great post.")
+
+    def test_only_comment_or_post_author_can_delete_comment(self):
+        comment = Comment.objects.create(
+            post=self.post,
+            author=self.other,
+            content="Please remove later.",
+        )
+        stranger = User.objects.create_user("stranger", password="StrongPass123!")
+        self.client.login(username="stranger", password="StrongPass123!")
+
+        forbidden = self.client.post(reverse("comment_delete", args=[comment.pk]))
+        self.assertEqual(forbidden.status_code, 403)
+
+        self.client.login(username="author", password="StrongPass123!")
+        allowed = self.client.post(reverse("comment_delete", args=[comment.pk]))
+
+        self.assertRedirects(allowed, self.post.get_absolute_url())
+        self.assertFalse(Comment.objects.filter(pk=comment.pk).exists())

@@ -7,8 +7,8 @@ from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from .forms import PostForm
-from .models import Post, PostLike, Tag
+from .forms import CommentForm, PostForm
+from .models import Comment, Post, PostLike, Tag
 
 
 FEED_TABS = [
@@ -105,6 +105,8 @@ def post_detail(request, slug):
             "post": post,
             "liked": liked,
             "can_edit": request.user == post.author,
+            "comments": post.comments.select_related("author"),
+            "comment_form": CommentForm(),
         },
     )
 
@@ -174,4 +176,30 @@ def toggle_like(request, slug):
     like, created = PostLike.objects.get_or_create(user=request.user, post=post)
     if not created:
         like.delete()
+    return redirect(post)
+
+
+@login_required
+@require_POST
+def comment_create(request, slug):
+    post = get_object_or_404(Post, slug=slug, is_public=True)
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.post = post
+        comment.author = request.user
+        comment.save()
+        messages.success(request, "Comment added.")
+    return redirect(post)
+
+
+@login_required
+@require_POST
+def comment_delete(request, pk):
+    comment = get_object_or_404(Comment, pk=pk)
+    post = comment.post
+    if comment.author != request.user and post.author != request.user:
+        return HttpResponseForbidden("Only the comment author or post author can delete this comment.")
+    comment.delete()
+    messages.success(request, "Comment deleted.")
     return redirect(post)

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Post, PostLike, Tag
+from .models import Comment, Post, PostLike, Tag
 
 
 @admin.register(Tag)
@@ -23,5 +23,11 @@ class PostAdmin(admin.ModelAdmin):
 class PostLikeAdmin(admin.ModelAdmin):
     list_display = ("user", "post", "created_at")
     search_fields = ("user__username", "post__title")
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ("post", "author", "created_at")
+    search_fields = ("post__title", "author__username", "content")
 
 # Register your models here.
