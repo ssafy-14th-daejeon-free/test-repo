@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Stats - velog clone{% endblock %}
+
+{% block content %}
+<section class="stats-dashboard">
+  <h1>Local stats</h1>
+  <p class="muted">All numbers come from this folder's SQLite database.</p>
+  <div class="stat-grid">
+    <div><strong>{{ totals.posts }}</strong><span>Posts</span></div>
+    <div><strong>{{ totals.views }}</strong><span>Views</span></div>
+    <div><strong>{{ totals.likes }}</strong><span>Likes</span></div>
+    <div><strong>{{ totals.comments }}</strong><span>Comments</span></div>
+  </div>
+  <div class="panel-list">
+    {% for post in posts %}
+      <article class="panel-item">
+        <a href="{{ post.get_absolute_url }}"><strong>{{ post.title }}</strong></a>
+        <span>{{ post.view_count }} views · {{ post.likes_count }} likes · {{ post.comments_count }} comments</span>
+      </article>
+    {% empty %}
+      <p class="empty compact">No posts yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

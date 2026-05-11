@@ -1,15 +1,47 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ page_title }} - velog clone{% endblock %}
 
 {% block content %}
-<section class="editor">
-  <h1>{{ page_title }}</h1>
+<section class="editor editor-advanced" data-editor>
+  <div class="editor-header">
+    <div>
+      <h1>{{ page_title }}</h1>
+      <p class="muted">Stored in this folder through Django and SQLite. No browser storage is used.</p>
+    </div>
+  </div>
   <form method="post" class="form">
     {% csrf_token %}
-    {{ form.as_p }}
+    <div class="editor-grid">
+      <div class="editor-fields">
+        {{ form.title.as_field_group }}
+        {{ form.cover_url.as_field_group }}
+        {{ form.excerpt.as_field_group }}
+        {{ form.series_title.as_field_group }}
+        {{ form.tags_text.as_field_group }}
+        {{ form.is_public.as_field_group }}
+        <div class="toolbar" aria-label="Markdown toolbar">
+          <button type="button" data-md="# ">H1</button>
+          <button type="button" data-md="## ">H2</button>
+          <button type="button" data-wrap="**">Bold</button>
+          <button type="button" data-md="- ">List</button>
+          <button type="button" data-wrap="`">Code</button>
+          <button type="button" data-md="> ">Quote</button>
+        </div>
+        {{ form.content.as_field_group }}
+      </div>
+      <aside class="editor-preview">
+        <div class="preview-meta">
+          <strong>Preview</strong>
+          <span data-word-count>0 words</span>
+        </div>
+        <div class="preview-body" data-preview></div>
+      </aside>
+    </div>
     <div class="form-actions">
-      <button class="button button-primary" type="submit">{{ submit_label }}</button>
+      <button class="button button-primary" type="submit" name="action" value="publish">Publish</button>
+      <button class="button" type="submit" name="action" value="draft">Save draft locally</button>
       {% if post %}
         <a class="button" href="{{ post.get_absolute_url }}">Cancel</a>
       {% else %}
@@ -18,4 +50,8 @@
     </div>
   </form>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/editor.js' %}"></script>
 {% endblock %}

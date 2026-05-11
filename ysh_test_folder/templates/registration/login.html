@@ -10,6 +10,10 @@
     {{ form.as_p }}
     <button class="button button-primary" type="submit">Login</button>
   </form>
+  <form method="post" action="{% url 'local_login' %}" class="local-login-form">
+    {% csrf_token %}
+    <button class="button" type="submit">Use folder-local test account</button>
+  </form>
   <p class="muted">No account yet? <a href="{% url 'signup' %}">Sign up</a>.</p>
 </section>
 {% endblock %}
