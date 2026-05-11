@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from blog.models import Follow, Notification
@@ -27,13 +27,20 @@ class SignupTests(TestCase):
         self.assertEqual(Profile.objects.get(user=user).display_name, "Writer")
         self.assertIn("_auth_user_id", self.client.session)
 
+    @override_settings(ENABLE_LOCAL_LOGIN=True)
     def test_local_login_creates_folder_local_account(self):
-        response = self.client.post(reverse("local_login"))
+        response = self.client.post(reverse("local_login"), HTTP_HOST="localhost")
 
         user = User.objects.get(username="localtester")
         self.assertRedirects(response, reverse("post_list"))
         self.assertEqual(Profile.objects.get(user=user).display_name, "Local Tester")
         self.assertIn("_auth_user_id", self.client.session)
+
+    @override_settings(ENABLE_LOCAL_LOGIN=False)
+    def test_local_login_is_disabled_unless_explicitly_enabled(self):
+        response = self.client.post(reverse("local_login"))
+
+        self.assertEqual(response.status_code, 404)
 
     def test_follow_toggle_creates_notification(self):
         follower = User.objects.create_user("follower", password="StrongPass123!")

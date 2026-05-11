@@ -44,6 +44,10 @@ class PostViewTests(TestCase):
         self.post.refresh_from_db()
         self.assertEqual(self.post.view_count, 1)
 
+        self.client.get(reverse("post_detail", args=[self.post.slug]))
+        self.post.refresh_from_db()
+        self.assertEqual(self.post.view_count, 1)
+
     def test_search_filters_posts(self):
         Post.objects.create(author=self.author, title="Another Topic", content="Body")
 
@@ -65,7 +69,7 @@ class PostViewTests(TestCase):
             reverse("post_create"),
             {
                 "title": "New Post",
-                "cover_url": "https://example.com/cover.jpg",
+                "cover_url": "https://picsum.photos/seed/test/640/360",
                 "content": "Content",
                 "excerpt": "Summary",
                 "series_title": "Django Notes",
@@ -76,9 +80,28 @@ class PostViewTests(TestCase):
 
         post = Post.objects.get(title="New Post")
         self.assertRedirects(response, post.get_absolute_url())
-        self.assertEqual(post.cover_url, "https://example.com/cover.jpg")
+        self.assertEqual(post.cover_url, "https://picsum.photos/seed/test/640/360")
         self.assertEqual(list(post.tags.values_list("name", flat=True)), ["clone", "django"])
         self.assertEqual(post.series.title, "Django Notes")
+
+    def test_disallowed_cover_host_is_rejected(self):
+        self.client.login(username="author", password="StrongPass123!")
+
+        response = self.client.post(
+            reverse("post_create"),
+            {
+                "title": "Tracked Cover",
+                "cover_url": "https://tracker.example/cover.jpg",
+                "content": "Content",
+                "excerpt": "",
+                "series_title": "",
+                "tags_text": "",
+                "is_public": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Post.objects.filter(title="Tracked Cover").exists())
 
     def test_author_can_save_local_draft(self):
         self.client.login(username="author", password="StrongPass123!")

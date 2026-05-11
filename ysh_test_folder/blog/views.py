@@ -1,3 +1,5 @@
+import time
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -9,6 +11,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import CommentForm, PostForm
 from .models import Comment, Follow, Notification, Post, PostLike, Series, Tag
+from accounts.security import is_rate_limited
 
 
 FEED_TABS = [
@@ -17,6 +20,8 @@ FEED_TABS = [
     ("latest", "Latest"),
     ("feed", "Feed"),
 ]
+
+VIEW_COUNT_WINDOW_SECONDS = 3600
 
 
 def public_posts():
@@ -39,6 +44,18 @@ def ordered_posts(queryset, tab):
 def paginate(request, queryset, per_page=12):
     paginator = Paginator(queryset, per_page)
     return paginator.get_page(request.GET.get("page"))
+
+
+def should_record_view(request, post_id):
+    now = int(time.time())
+    seen = request.session.get("viewed_posts", {})
+    last_seen = int(seen.get(str(post_id), 0))
+    if now - last_seen < VIEW_COUNT_WINDOW_SECONDS:
+        return False
+    seen[str(post_id)] = now
+    request.session["viewed_posts"] = seen
+    request.session.modified = True
+    return True
 
 
 def post_list(request):
@@ -117,7 +134,8 @@ def post_detail(request, slug):
     )
     if not post.is_public and post.author != request.user:
         raise Http404("Post not found.")
-    post.record_view()
+    if should_record_view(request, post.pk):
+        post.record_view()
 
     liked = False
     if request.user.is_authenticated:
@@ -139,6 +157,8 @@ def post_detail(request, slug):
 @login_required
 def post_create(request):
     if request.method == "POST":
+        if is_rate_limited(request, "post-create", limit=20, window_seconds=300):
+            return HttpResponse("Too many post attempts.", status=429)
         form = PostForm(request.POST)
         if form.is_valid():
             post = form.save(commit=False)
@@ -233,6 +253,8 @@ def toggle_like(request, slug):
 @login_required
 @require_POST
 def comment_create(request, slug):
+    if is_rate_limited(request, "comment-create", limit=30, window_seconds=300):
+        return HttpResponse("Too many comment attempts.", status=429)
     post = get_object_or_404(Post, slug=slug, is_public=True)
     form = CommentForm(request.POST)
     if form.is_valid():

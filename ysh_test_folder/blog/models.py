@@ -4,7 +4,7 @@ from django.db.models import F, Q
 from django.urls import reverse
 from django.utils.text import Truncator, slugify
 
-from .utils import render_markdown
+from .utils import is_allowed_cover_url, render_markdown
 
 
 def build_unique_slug(model, value, instance_pk=None, max_length=90):
@@ -114,6 +114,12 @@ class Post(models.Model):
     @property
     def rendered_content(self):
         return render_markdown(self.content)
+
+    @property
+    def display_cover_url(self):
+        if is_allowed_cover_url(self.cover_url):
+            return self.cover_url
+        return ""
 
     @property
     def summary(self):

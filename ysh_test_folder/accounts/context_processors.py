@@ -1,10 +1,16 @@
-def local_counts(request):
-    if not request.user.is_authenticated:
-        return {}
+from django.conf import settings
 
-    return {
-        "unread_notification_count": request.user.notifications.filter(
+
+def local_counts(request):
+    context = {"enable_local_login": settings.ENABLE_LOCAL_LOGIN}
+    user = getattr(request, "user", None)
+    if not user or not user.is_authenticated:
+        return context
+
+    context.update({
+        "unread_notification_count": user.notifications.filter(
             is_read=False
         ).count(),
-        "draft_count": request.user.posts.filter(is_public=False).count(),
-    }
+        "draft_count": user.posts.filter(is_public=False).count(),
+    })
+    return context

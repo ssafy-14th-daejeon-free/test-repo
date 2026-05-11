@@ -1,19 +1,41 @@
+from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+from django.contrib.auth import views as auth_views
 
 from blog.models import Follow, Notification, Post
 
 from .forms import SignUpForm
 from .models import Profile
+from .security import is_local_request, is_rate_limited
+
+
+class RateLimitedLoginView(auth_views.LoginView):
+    def post(self, request, *args, **kwargs):
+        username = request.POST.get("username", "").lower()
+        if is_rate_limited(request, "login-ip", limit=20, window_seconds=300):
+            return HttpResponse("Too many login attempts.", status=429)
+        if username and is_rate_limited(
+            request,
+            "login-user",
+            limit=10,
+            window_seconds=300,
+            identifier=username,
+        ):
+            return HttpResponse("Too many login attempts.", status=429)
+        return super().post(request, *args, **kwargs)
 
 
 def signup(request):
     if request.method == "POST":
+        if is_rate_limited(request, "signup", limit=8, window_seconds=300):
+            return HttpResponse("Too many signup attempts.", status=429)
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
@@ -34,6 +56,11 @@ def signup(request):
 
 @require_POST
 def local_login(request):
+    if not settings.ENABLE_LOCAL_LOGIN or not is_local_request(request):
+        raise Http404("Not found.")
+    if is_rate_limited(request, "local-login", limit=10, window_seconds=300):
+        return HttpResponse("Too many local login attempts.", status=429)
+
     user, created = User.objects.get_or_create(
         username="localtester",
         defaults={"email": "localtester@example.local"},

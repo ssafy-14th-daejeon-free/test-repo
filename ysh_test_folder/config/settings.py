@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+import secrets
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,20 +21,39 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
+def load_secret_key():
+    if os.environ.get("DJANGO_SECRET_KEY"):
+        return os.environ["DJANGO_SECRET_KEY"]
+
+    secret_dir = BASE_DIR / ".local"
+    secret_file = secret_dir / "django-secret-key"
+    secret_dir.mkdir(exist_ok=True)
+    if not secret_file.exists():
+        secret_file.write_text(secrets.token_urlsafe(50), encoding="utf-8")
+    return secret_file.read_text(encoding="utf-8").strip()
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "django-insecure-16nx=uy5i+4*!(6tqrnv3^!=07m(c$qa!(n5ch^6uerx0n=$fy",
-)
+SECRET_KEY = load_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
+DEBUG = os.environ.get("DJANGO_DEBUG", "0") == "1"
 
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
     if host.strip()
 ]
+
+ENABLE_LOCAL_LOGIN = os.environ.get("ENABLE_LOCAL_LOGIN", "0") == "1"
+ALLOWED_COVER_IMAGE_HOSTS = {
+    host.strip().lower()
+    for host in os.environ.get(
+        "ALLOWED_COVER_IMAGE_HOSTS",
+        "127.0.0.1,localhost,picsum.photos,images.unsplash.com",
+    ).split(",")
+    if host.strip()
+}
 
 
 # Application definition
@@ -150,3 +170,15 @@ LOGIN_REDIRECT_URL = 'post_list'
 LOGOUT_REDIRECT_URL = 'post_list'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = True
+SECURE_REFERRER_POLICY = "same-origin"
+SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "0") == "1"
+SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
+CSRF_COOKIE_SECURE = os.environ.get("CSRF_COOKIE_SECURE", "0") == "1"
+SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get("SECURE_HSTS_INCLUDE_SUBDOMAINS", "0") == "1"
+SECURE_HSTS_PRELOAD = os.environ.get("SECURE_HSTS_PRELOAD", "0") == "1"

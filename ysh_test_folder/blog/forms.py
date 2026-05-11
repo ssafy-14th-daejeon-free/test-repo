@@ -1,6 +1,7 @@
 from django import forms
 
 from .models import Comment, Post, Tag
+from .utils import is_allowed_cover_url
 
 
 class PostForm(forms.ModelForm):
@@ -69,6 +70,12 @@ class PostForm(forms.ModelForm):
             raise forms.ValidationError("Each tag must be 30 characters or fewer.")
 
         return tag_names
+
+    def clean_cover_url(self):
+        cover_url = self.cleaned_data["cover_url"].strip()
+        if cover_url and not is_allowed_cover_url(cover_url):
+            raise forms.ValidationError("This cover image host is not allowed.")
+        return cover_url
 
     def save_tags(self, post):
         tags = []
