@@ -1,0 +1,9 @@
+.venv/
+.omx/
+__pycache__/
+*.py[cod]
+db.sqlite3
+media/
+.env
+.pytest_cache/
+.coverage

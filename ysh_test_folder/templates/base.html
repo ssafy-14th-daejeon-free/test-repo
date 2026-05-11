@@ -1,0 +1,50 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}velog clone{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" href="{% url 'post_list' %}">velog</a>
+      <div class="nav-actions">
+        <form action="{% url 'post_list' %}" method="get" class="search-form">
+          <input type="search" name="q" value="{{ search_query|default:'' }}" placeholder="Search">
+          <button type="submit" class="icon-circle" aria-label="Search">
+            <span class="search-icon" aria-hidden="true"></span>
+          </button>
+        </form>
+        <button class="icon-circle" type="button" aria-label="Theme">
+          <span class="theme-icon" aria-hidden="true"></span>
+        </button>
+        {% if user.is_authenticated %}
+          <a class="write-link" href="{% url 'post_create' %}">Write</a>
+          <a class="avatar" href="{% url 'profile' user.username %}" aria-label="Profile">{{ user.username|first|upper }}</a>
+          <form action="{% url 'logout' %}" method="post" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="icon-circle" aria-label="Logout">out</button>
+          </form>
+        {% else %}
+          <a class="login-pill" href="{% url 'login' %}">Login</a>
+        {% endif %}
+      </div>
+    </nav>
+  </header>
+
+  <main class="container">
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <p class="message {{ message.tags }}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
