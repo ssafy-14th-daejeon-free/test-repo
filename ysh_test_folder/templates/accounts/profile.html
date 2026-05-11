@@ -11,6 +11,15 @@
     {% if profile.bio %}
       <p>{{ profile.bio }}</p>
     {% endif %}
+    <p class="muted">{{ follower_count }} followers · {{ following_count }} following</p>
+    {% if user.is_authenticated and user != owner %}
+      <form method="post" action="{% url 'toggle_follow' owner.username %}">
+        {% csrf_token %}
+        <button class="button {% if is_following %}button-secondary{% else %}button-primary{% endif %}" type="submit">
+          {% if is_following %}Following{% else %}Follow{% endif %}
+        </button>
+      </form>
+    {% endif %}
   </div>
 </section>
 

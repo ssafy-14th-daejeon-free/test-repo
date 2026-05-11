@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Drafts - velog clone{% endblock %}
+
+{% block content %}
+<section class="panel-list">
+  <h1>Local drafts</h1>
+  <p class="muted">Drafts are stored in this folder's SQLite database.</p>
+  {% for draft in drafts %}
+    <article class="panel-item">
+      <a href="{% url 'post_update' draft.slug %}"><strong>{{ draft.title }}</strong></a>
+      <span>Updated {{ draft.updated_at|date:"M d, H:i" }}</span>
+      {% if draft.series %}<span>Series: {{ draft.series.title }}</span>{% endif %}
+    </article>
+  {% empty %}
+    <p class="empty compact">No local drafts yet.</p>
+  {% endfor %}
+</section>
+{% endblock %}

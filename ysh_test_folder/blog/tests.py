@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Comment, Post, PostLike, Series, Tag
+from .models import Comment, Follow, Notification, Post, PostLike, Series, Tag
 from .utils import render_markdown
 
 
@@ -41,6 +41,8 @@ class PostViewTests(TestCase):
 
         self.assertContains(list_response, "First Post")
         self.assertContains(detail_response, "<h1>Hello</h1>", html=True)
+        self.post.refresh_from_db()
+        self.assertEqual(self.post.view_count, 1)
 
     def test_search_filters_posts(self):
         Post.objects.create(author=self.author, title="Another Topic", content="Body")
@@ -77,6 +79,39 @@ class PostViewTests(TestCase):
         self.assertEqual(post.cover_url, "https://example.com/cover.jpg")
         self.assertEqual(list(post.tags.values_list("name", flat=True)), ["clone", "django"])
         self.assertEqual(post.series.title, "Django Notes")
+
+    def test_author_can_save_local_draft(self):
+        self.client.login(username="author", password="StrongPass123!")
+
+        response = self.client.post(
+            reverse("post_create"),
+            {
+                "title": "Draft Post",
+                "content": "Draft content",
+                "excerpt": "",
+                "series_title": "",
+                "tags_text": "",
+                "action": "draft",
+            },
+        )
+
+        draft = Post.objects.get(title="Draft Post")
+        self.assertRedirects(response, draft.get_absolute_url())
+        self.assertFalse(draft.is_public)
+
+        drafts_response = self.client.get(reverse("draft_list"))
+        self.assertContains(drafts_response, "Draft Post")
+
+    def test_feed_tab_uses_followed_authors(self):
+        followed = User.objects.create_user("followed", password="StrongPass123!")
+        Post.objects.create(author=followed, title="Followed Post", content="Body")
+        Follow.objects.create(follower=self.other, following=followed)
+        self.client.login(username="other", password="StrongPass123!")
+
+        response = self.client.get(reverse("post_list"), {"tab": "feed"})
+
+        self.assertContains(response, "Followed Post")
+        self.assertNotContains(response, "First Post")
 
     def test_series_page_lists_matching_posts(self):
         series = Series.objects.create(author=self.author, title="Learning Django")
@@ -135,6 +170,13 @@ class PostViewTests(TestCase):
 
         self.assertRedirects(response, self.post.get_absolute_url())
         self.assertEqual(Comment.objects.get(post=self.post).content, "Great post.")
+        self.assertTrue(
+            Notification.objects.filter(
+                recipient=self.author,
+                actor=self.other,
+                kind=Notification.Kind.COMMENT,
+            ).exists()
+        )
 
     def test_only_comment_or_post_author_can_delete_comment(self):
         comment = Comment.objects.create(
@@ -153,3 +195,16 @@ class PostViewTests(TestCase):
 
         self.assertRedirects(allowed, self.post.get_absolute_url())
         self.assertFalse(Comment.objects.filter(pk=comment.pk).exists())
+
+    def test_stats_dashboard_shows_local_counts(self):
+        PostLike.objects.create(post=self.post, user=self.other)
+        Comment.objects.create(post=self.post, author=self.other, content="Nice.")
+        self.post.view_count = 3
+        self.post.save(update_fields=["view_count"])
+        self.client.login(username="author", password="StrongPass123!")
+
+        response = self.client.get(reverse("stats_dashboard"))
+
+        self.assertContains(response, "3")
+        self.assertContains(response, "1 likes")
+        self.assertContains(response, "1 comments")

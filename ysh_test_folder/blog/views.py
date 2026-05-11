@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .forms import CommentForm, PostForm
-from .models import Comment, Post, PostLike, Series, Tag
+from .models import Comment, Follow, Notification, Post, PostLike, Series, Tag
 
 
 FEED_TABS = [
@@ -48,6 +48,10 @@ def post_list(request):
 
     search_query = request.GET.get("q", "").strip()
     posts = public_posts()
+    if active_tab == "feed" and request.user.is_authenticated:
+        followed_ids = Follow.objects.filter(follower=request.user).values("following_id")
+        posts = posts.filter(author_id__in=followed_ids)
+
     if search_query:
         posts = posts.filter(
             Q(title__icontains=search_query)
@@ -113,6 +117,7 @@ def post_detail(request, slug):
     )
     if not post.is_public and post.author != request.user:
         raise Http404("Post not found.")
+    post.record_view()
 
     liked = False
     if request.user.is_authenticated:
@@ -138,10 +143,17 @@ def post_create(request):
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user
+            if request.POST.get("action") == "draft":
+                post.is_public = False
+            elif request.POST.get("action") == "publish":
+                post.is_public = True
             post.save()
             form.save_tags(post)
             form.save_series(post)
-            messages.success(request, "Post published.")
+            if post.is_public:
+                messages.success(request, "Post published.")
+            else:
+                messages.success(request, "Draft saved in local SQLite storage.")
             return redirect(post)
     else:
         form = PostForm()
@@ -162,10 +174,18 @@ def post_update(request, slug):
     if request.method == "POST":
         form = PostForm(request.POST, instance=post)
         if form.is_valid():
-            post = form.save()
+            post = form.save(commit=False)
+            if request.POST.get("action") == "draft":
+                post.is_public = False
+            elif request.POST.get("action") == "publish":
+                post.is_public = True
+            post.save()
             form.save_tags(post)
             form.save_series(post)
-            messages.success(request, "Post updated.")
+            if post.is_public:
+                messages.success(request, "Post published.")
+            else:
+                messages.success(request, "Draft saved in local SQLite storage.")
             return redirect(post)
     else:
         form = PostForm(instance=post)
@@ -196,7 +216,16 @@ def post_delete(request, slug):
 def toggle_like(request, slug):
     post = get_object_or_404(Post, slug=slug, is_public=True)
     like, created = PostLike.objects.get_or_create(user=request.user, post=post)
-    if not created:
+    if created:
+        if post.author != request.user:
+            Notification.objects.create(
+                recipient=post.author,
+                actor=request.user,
+                post=post,
+                kind=Notification.Kind.LIKE,
+                message=f"{request.user.username} liked your post.",
+            )
+    else:
         like.delete()
     return redirect(post)
 
@@ -211,6 +240,14 @@ def comment_create(request, slug):
         comment.post = post
         comment.author = request.user
         comment.save()
+        if post.author != request.user:
+            Notification.objects.create(
+                recipient=post.author,
+                actor=request.user,
+                post=post,
+                kind=Notification.Kind.COMMENT,
+                message=f"{request.user.username} commented on your post.",
+            )
         messages.success(request, "Comment added.")
     return redirect(post)
 
@@ -225,3 +262,37 @@ def comment_delete(request, pk):
     comment.delete()
     messages.success(request, "Comment deleted.")
     return redirect(post)
+
+
+@login_required
+def draft_list(request):
+    drafts = (
+        Post.objects.filter(author=request.user, is_public=False)
+        .select_related("series")
+        .prefetch_related("tags")
+        .order_by("-updated_at")
+    )
+    return render(request, "blog/draft_list.html", {"drafts": drafts})
+
+
+@login_required
+def stats_dashboard(request):
+    posts = (
+        Post.objects.filter(author=request.user)
+        .annotate(
+            likes_count=Count("likes", distinct=True),
+            comments_count=Count("comments", distinct=True),
+        )
+        .order_by("-view_count", "-updated_at")
+    )
+    totals = {
+        "posts": posts.count(),
+        "views": sum(post.view_count for post in posts),
+        "likes": sum(post.likes_count for post in posts),
+        "comments": sum(post.comments_count for post in posts),
+    }
+    return render(
+        request,
+        "blog/stats_dashboard.html",
+        {"posts": posts, "totals": totals},
+    )
