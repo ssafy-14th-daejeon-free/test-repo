@@ -74,6 +74,7 @@ class Post(models.Model):
     )
     title = models.CharField(max_length=150)
     slug = models.SlugField(max_length=90, unique=True, allow_unicode=True, blank=True)
+    cover_url = models.URLField(blank=True)
     content = models.TextField()
     excerpt = models.CharField(max_length=240, blank=True)
     series = models.ForeignKey(

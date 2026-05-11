@@ -17,15 +17,25 @@ class PostForm(forms.ModelForm):
 
     class Meta:
         model = Post
-        fields = ("title", "content", "excerpt", "series_title", "tags_text", "is_public")
+        fields = (
+            "title",
+            "cover_url",
+            "content",
+            "excerpt",
+            "series_title",
+            "tags_text",
+            "is_public",
+        )
         labels = {
             "title": "Title",
+            "cover_url": "Cover image URL",
             "content": "Content",
             "excerpt": "Excerpt",
             "is_public": "Public",
         }
         widgets = {
             "title": forms.TextInput(attrs={"placeholder": "Title"}),
+            "cover_url": forms.URLInput(attrs={"placeholder": "https://example.com/image.jpg"}),
             "content": forms.Textarea(
                 attrs={
                     "rows": 18,

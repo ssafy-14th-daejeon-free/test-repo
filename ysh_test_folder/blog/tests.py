@@ -63,6 +63,7 @@ class PostViewTests(TestCase):
             reverse("post_create"),
             {
                 "title": "New Post",
+                "cover_url": "https://example.com/cover.jpg",
                 "content": "Content",
                 "excerpt": "Summary",
                 "series_title": "Django Notes",
@@ -73,6 +74,7 @@ class PostViewTests(TestCase):
 
         post = Post.objects.get(title="New Post")
         self.assertRedirects(response, post.get_absolute_url())
+        self.assertEqual(post.cover_url, "https://example.com/cover.jpg")
         self.assertEqual(list(post.tags.values_list("name", flat=True)), ["clone", "django"])
         self.assertEqual(post.series.title, "Django Notes")
 

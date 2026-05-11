@@ -3,7 +3,11 @@
     {% for post in page_obj %}
       <article class="post-card">
         <a class="post-cover" href="{{ post.get_absolute_url }}" aria-label="{{ post.title }}">
-          <span>{{ post.title|first|upper }}</span>
+          {% if post.cover_url %}
+            <img src="{{ post.cover_url }}" alt="">
+          {% else %}
+            <span>{{ post.title|first|upper }}</span>
+          {% endif %}
         </a>
         <div class="post-card-body">
           <a href="{{ post.get_absolute_url }}">
