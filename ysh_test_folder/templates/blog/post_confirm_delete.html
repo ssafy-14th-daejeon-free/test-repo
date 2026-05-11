@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}글 삭제 · Django Blog{% endblock %}
+{% block title %}Delete post - velog clone{% endblock %}
 
 {% block content %}
 <section class="auth-panel">
-  <h1>글 삭제</h1>
-  <p><strong>{{ post.title }}</strong> 글을 삭제합니다. 이 작업은 되돌릴 수 없습니다.</p>
+  <h1>Delete post</h1>
+  <p><strong>{{ post.title }}</strong> will be deleted. This cannot be undone.</p>
   <form method="post" class="form">
     {% csrf_token %}
-    <button class="button button-danger" type="submit">삭제</button>
-    <a class="button" href="{{ post.get_absolute_url }}">취소</a>
+    <button class="button button-danger" type="submit">Delete</button>
+    <a class="button" href="{{ post.get_absolute_url }}">Cancel</a>
   </form>
 </section>
 {% endblock %}

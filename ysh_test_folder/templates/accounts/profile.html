@@ -1,18 +1,21 @@
 {% extends "base.html" %}
 
-{% block title %}{{ owner.username }} · Django Blog{% endblock %}
+{% block title %}{{ owner.username }} - velog clone{% endblock %}
 
 {% block content %}
 <section class="profile-header">
-  <h1>{{ profile }}</h1>
-  <p class="muted">@{{ owner.username }}</p>
-  {% if profile.bio %}
-    <p>{{ profile.bio }}</p>
-  {% endif %}
+  <div class="profile-avatar">{{ owner.username|first|upper }}</div>
+  <div>
+    <h1>{{ profile }}</h1>
+    <p class="muted">@{{ owner.username }}</p>
+    {% if profile.bio %}
+      <p>{{ profile.bio }}</p>
+    {% endif %}
+  </div>
 </section>
 
 <section class="section-header">
-  <h2>작성한 글</h2>
+  <h2>Posts</h2>
 </section>
 
 {% include "blog/_post_cards.html" %}

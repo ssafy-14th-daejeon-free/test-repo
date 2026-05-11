@@ -2,39 +2,47 @@
   <div class="post-grid">
     {% for post in page_obj %}
       <article class="post-card">
-        <a href="{{ post.get_absolute_url }}">
-          <h2>{{ post.title }}</h2>
-          <p>{{ post.summary }}</p>
+        <a class="post-cover" href="{{ post.get_absolute_url }}" aria-label="{{ post.title }}">
+          <span>{{ post.title|first|upper }}</span>
         </a>
-        <div class="post-meta">
-          <a href="{% url 'profile' post.author.username %}">@{{ post.author.username }}</a>
-          <span>{{ post.created_at|date:"Y.m.d" }}</span>
-          <span>좋아요 {{ post.like_count }}</span>
+        <div class="post-card-body">
+          <a href="{{ post.get_absolute_url }}">
+            <h2>{{ post.title }}</h2>
+            <p>{{ post.summary }}</p>
+          </a>
+          {% if post.tags.all %}
+            <div class="tag-row">
+              {% for tag in post.tags.all %}
+                <a class="tag" href="{{ tag.get_absolute_url }}">#{{ tag.name }}</a>
+              {% endfor %}
+            </div>
+          {% endif %}
         </div>
-        {% if post.tags.all %}
-          <div class="tag-row">
-            {% for tag in post.tags.all %}
-              <a class="tag" href="{{ tag.get_absolute_url }}">#{{ tag.name }}</a>
-            {% endfor %}
-          </div>
-        {% endif %}
+        <footer class="post-card-footer">
+          <a class="author" href="{% url 'profile' post.author.username %}">
+            <span class="mini-avatar">{{ post.author.username|first|upper }}</span>
+            <span>by <strong>{{ post.author.username }}</strong></span>
+          </a>
+          <span>{{ post.created_at|date:"M d" }}</span>
+          <span>{{ post.like_count }} likes</span>
+        </footer>
       </article>
     {% empty %}
-      <p class="empty">아직 글이 없습니다.</p>
+      <p class="empty">No posts yet.</p>
     {% endfor %}
   </div>
 
   {% if page_obj.has_other_pages %}
     <nav class="pagination">
       {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}">이전</a>
+        <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
       {% endif %}
       <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
       {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}">다음</a>
+        <a href="?page={{ page_obj.next_page_number }}">Next</a>
       {% endif %}
     </nav>
   {% endif %}
 {% else %}
-  <p class="empty">아직 글이 없습니다.</p>
+  <p class="empty">No posts yet.</p>
 {% endif %}

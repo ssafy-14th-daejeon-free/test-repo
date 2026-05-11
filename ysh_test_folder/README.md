@@ -1,8 +1,8 @@
-# Django Blog MVP
+# Django velog Clone MVP
 
-Django Templates로 프론트엔드와 백엔드를 함께 처리하는 velog형 블로그 MVP입니다.
+A Django-only blog MVP inspired by velog. Django Templates handle the front end and Django views/models handle the back end.
 
-## 실행
+## Run
 
 ```powershell
 python -m venv .venv
@@ -11,9 +11,10 @@ python -m venv .venv
 .\.venv\Scripts\python manage.py runserver
 ```
 
-## 주요 기능
+## Features
 
-- 회원가입, 로그인, 로그아웃
-- Markdown 글 작성, 수정, 삭제
-- 최신 글 목록, 글 상세, 태그별 목록, 사용자 프로필
-- 로그인 사용자 좋아요 토글
+- Sign up, login, logout, and profile pages
+- Markdown post create, read, update, and delete
+- Trending/latest/feed-style post list tabs
+- Tag pages and search
+- Like toggle for logged-in users

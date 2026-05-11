@@ -5,29 +5,29 @@ from .models import Post, Tag
 
 class PostForm(forms.ModelForm):
     tags_text = forms.CharField(
-        label="태그",
+        label="Tags",
         required=False,
-        help_text="쉼표로 구분해 최대 8개까지 입력하세요.",
+        help_text="Separate up to 8 tags with commas.",
     )
 
     class Meta:
         model = Post
         fields = ("title", "content", "excerpt", "tags_text", "is_public")
         labels = {
-            "title": "제목",
-            "content": "본문",
-            "excerpt": "요약",
-            "is_public": "공개",
+            "title": "Title",
+            "content": "Content",
+            "excerpt": "Excerpt",
+            "is_public": "Public",
         }
         widgets = {
-            "title": forms.TextInput(attrs={"placeholder": "제목을 입력하세요"}),
+            "title": forms.TextInput(attrs={"placeholder": "Title"}),
             "content": forms.Textarea(
                 attrs={
                     "rows": 18,
-                    "placeholder": "Markdown으로 글을 작성하세요.",
+                    "placeholder": "Write with Markdown.",
                 }
             ),
-            "excerpt": forms.TextInput(attrs={"placeholder": "목록에 표시할 짧은 요약"}),
+            "excerpt": forms.TextInput(attrs={"placeholder": "Short summary for cards"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -45,11 +45,11 @@ class PostForm(forms.ModelForm):
                 tag_names.append(name)
 
         if len(tag_names) > 8:
-            raise forms.ValidationError("태그는 최대 8개까지 입력할 수 있습니다.")
+            raise forms.ValidationError("Use up to 8 tags.")
 
         too_long = [name for name in tag_names if len(name) > 30]
         if too_long:
-            raise forms.ValidationError("태그 이름은 30자를 넘을 수 없습니다.")
+            raise forms.ValidationError("Each tag must be 30 characters or fewer.")
 
         return tag_names
 

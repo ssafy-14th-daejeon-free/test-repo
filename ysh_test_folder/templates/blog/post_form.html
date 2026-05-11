@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ page_title }} · Django Blog{% endblock %}
+{% block title %}{{ page_title }} - velog clone{% endblock %}
 
 {% block content %}
 <section class="editor">
@@ -11,9 +11,9 @@
     <div class="form-actions">
       <button class="button button-primary" type="submit">{{ submit_label }}</button>
       {% if post %}
-        <a class="button" href="{{ post.get_absolute_url }}">취소</a>
+        <a class="button" href="{{ post.get_absolute_url }}">Cancel</a>
       {% else %}
-        <a class="button" href="{% url 'post_list' %}">취소</a>
+        <a class="button" href="{% url 'post_list' %}">Cancel</a>
       {% endif %}
     </div>
   </form>

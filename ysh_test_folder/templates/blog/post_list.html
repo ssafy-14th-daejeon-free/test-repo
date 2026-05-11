@@ -1,25 +1,39 @@
 {% extends "base.html" %}
 
-{% block title %}{{ page_title }} · Django Blog{% endblock %}
+{% block title %}{{ page_title }} - velog clone{% endblock %}
 
 {% block content %}
-<section class="section-header">
-  <div>
-    <h1>{{ page_title }}</h1>
-    <p class="muted">Markdown으로 쓰고 Django로 발행하는 블로그입니다.</p>
+<section class="feed-shell">
+  <div class="feed-toolbar">
+    <nav class="feed-tabs" aria-label="Post feed tabs">
+      {% for key, label in tabs %}
+        <a class="{% if active_tab == key %}active{% endif %}" href="?tab={{ key }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">
+          <span class="tab-icon" aria-hidden="true"></span>
+          {{ label }}
+        </a>
+      {% endfor %}
+    </nav>
+    <div class="feed-controls">
+      <button type="button" class="period-select">This week</button>
+      <button type="button" class="more-button" aria-label="More">...</button>
+    </div>
   </div>
-  {% if user.is_authenticated %}
-    <a class="button button-primary" href="{% url 'post_create' %}">새 글 작성</a>
+
+  {% if search_query %}
+    <div class="result-banner">
+      <strong>{{ search_query }}</strong>
+      <span>{{ page_obj.paginator.count }} posts found</span>
+    </div>
   {% endif %}
+
+  {% if tags and active_tag %}
+    <div class="tag-cloud">
+      {% for tag in tags %}
+        <a class="tag {% if active_tag == tag %}active{% endif %}" href="{{ tag.get_absolute_url }}">#{{ tag.name }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% include "blog/_post_cards.html" %}
 </section>
-
-{% if tags %}
-  <div class="tag-cloud">
-    {% for tag in tags %}
-      <a class="tag {% if active_tag == tag %}active{% endif %}" href="{{ tag.get_absolute_url }}">#{{ tag.name }}</a>
-    {% endfor %}
-  </div>
-{% endif %}
-
-{% include "blog/_post_cards.html" %}
 {% endblock %}

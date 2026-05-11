@@ -9,11 +9,11 @@ from .utils import render_markdown
 class PostModelTests(TestCase):
     def test_post_slug_is_unique(self):
         author = User.objects.create_user("author", password="pass")
-        first = Post.objects.create(author=author, title="같은 제목", content="본문")
-        second = Post.objects.create(author=author, title="같은 제목", content="본문")
+        first = Post.objects.create(author=author, title="Same Title", content="Body")
+        second = Post.objects.create(author=author, title="Same Title", content="Body")
 
-        self.assertEqual(first.slug, "같은-제목")
-        self.assertEqual(second.slug, "같은-제목-2")
+        self.assertEqual(first.slug, "same-title")
+        self.assertEqual(second.slug, "same-title-2")
 
     def test_markdown_output_strips_unsafe_html_and_protocols(self):
         rendered = render_markdown("[bad](javascript:alert(1))<script>alert(1)</script>")
@@ -29,8 +29,8 @@ class PostViewTests(TestCase):
         self.other = User.objects.create_user("other", password="StrongPass123!")
         self.post = Post.objects.create(
             author=self.author,
-            title="첫 글",
-            content="# 안녕하세요\n\n본문입니다.",
+            title="First Post",
+            content="# Hello\n\nBody text.",
         )
         self.tag = Tag.objects.create(name="django")
         self.post.tags.add(self.tag)
@@ -39,8 +39,16 @@ class PostViewTests(TestCase):
         list_response = self.client.get(reverse("post_list"))
         detail_response = self.client.get(reverse("post_detail", args=[self.post.slug]))
 
-        self.assertContains(list_response, "첫 글")
-        self.assertContains(detail_response, "<h1>안녕하세요</h1>", html=True)
+        self.assertContains(list_response, "First Post")
+        self.assertContains(detail_response, "<h1>Hello</h1>", html=True)
+
+    def test_search_filters_posts(self):
+        Post.objects.create(author=self.author, title="Another Topic", content="Body")
+
+        response = self.client.get(reverse("post_list"), {"q": "First"})
+
+        self.assertContains(response, "First Post")
+        self.assertNotContains(response, "Another Topic")
 
     def test_login_required_for_create(self):
         response = self.client.get(reverse("post_create"))
@@ -54,15 +62,15 @@ class PostViewTests(TestCase):
         response = self.client.post(
             reverse("post_create"),
             {
-                "title": "새 글",
-                "content": "내용",
-                "excerpt": "요약",
+                "title": "New Post",
+                "content": "Content",
+                "excerpt": "Summary",
                 "tags_text": "django, clone",
                 "is_public": "on",
             },
         )
 
-        post = Post.objects.get(title="새 글")
+        post = Post.objects.get(title="New Post")
         self.assertRedirects(response, post.get_absolute_url())
         self.assertEqual(list(post.tags.values_list("name", flat=True)), ["clone", "django"])
 
@@ -72,8 +80,8 @@ class PostViewTests(TestCase):
         update_response = self.client.post(
             reverse("post_update", args=[self.post.slug]),
             {
-                "title": "해킹",
-                "content": "변경",
+                "title": "Changed",
+                "content": "Changed content",
                 "excerpt": "",
                 "tags_text": "",
                 "is_public": "on",
@@ -84,7 +92,7 @@ class PostViewTests(TestCase):
         self.assertEqual(update_response.status_code, 403)
         self.assertEqual(delete_response.status_code, 403)
         self.post.refresh_from_db()
-        self.assertEqual(self.post.title, "첫 글")
+        self.assertEqual(self.post.title, "First Post")
 
     def test_like_toggle_is_unique(self):
         self.client.login(username="other", password="StrongPass123!")
@@ -101,6 +109,4 @@ class PostViewTests(TestCase):
         response = self.client.get(reverse("tag_posts", args=[self.tag.slug]))
 
         self.assertContains(response, "#django")
-        self.assertContains(response, "첫 글")
-
-# Create your tests here.
+        self.assertContains(response, "First Post")
